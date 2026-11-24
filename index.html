@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thành Phố Của Tôi — City Sim 2D</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hud">
+    <div class="hud-row">
+      <span class="stat">💰 <b id="stat-money">0</b></span>
+      <span class="stat">👥 <b id="stat-pop">0</b></span>
+      <span class="stat">😊 <b id="stat-happy">0</b></span>
+      <span class="stat">⭐ <b id="stat-rep">0</b></span>
+      <span class="stat">⚡ <b id="stat-power">0/0</b></span>
+      <span class="stat">💧 <b id="stat-water">0/0</b></span>
+      <span class="stat">📅 Ngày <b id="stat-day">1</b></span>
+    </div>
+    <div class="sus-wrap">
+      <span class="sus-label">🚨 Nghi ngờ</span>
+      <div class="sus-track"><div id="sus-bar"></div></div>
+      <b id="stat-sus">0</b>
+    </div>
+  </header>
+
+  <main>
+    <div id="game"></div>
+    <div class="toolbar-wrap">
+      <div class="sel-ind">Đang chọn: <b id="sel-name"></b> — click vào bản đồ để đặt</div>
+      <div id="toolbar" class="toolbar"></div>
+    </div>
+    <div id="log" class="log"></div>
+  </main>
+
+  <div id="toast"></div>
+
+  <div id="disclaimer" class="overlay">
+    <div class="card">
+      <h1>🏙️ Thành Phố Của Tôi</h1>
+      <p>Xây dựng và phát triển thành phố với các lựa chọn <b>hợp pháp</b> và <b>phi pháp</b>.</p>
+      <p class="warn">⚠️ <b>TUYÊN BỐ HƯ CẤU:</b> Toàn bộ nhân vật, tổ chức, luật pháp và tình huống trong game đều là <b>HƯ CẤU</b>, chỉ nhằm mục đích giải trí – mô phỏng. Không phản ánh hay hướng dẫn bất kỳ hành vi vi phạm pháp luật thực tế nào.</p>
+      <button id="start-btn">Bắt đầu chơi</button>
+    </div>
+  </div>
+
+  <div id="modal" class="overlay">
+    <div class="card">
+      <h2 id="modal-title"></h2>
+      <p id="modal-desc"></p>
+      <div class="modal-actions">
+        <button id="modal-btn1"></button>
+        <button id="modal-btn2" class="danger"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
