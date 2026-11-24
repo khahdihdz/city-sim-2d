@@ -6,6 +6,7 @@ const ROWS = 14;
 const W = COLS * TILE;
 const H = ROWS * TILE;
 const WIN_POP = 250;
+const SAVE_KEY = 'city-sim-save-v1';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -19,21 +20,25 @@ const state = {
 };
 
 const BUILDINGS = {
-  road:        { name: 'Đường',              cost: 10,  color: '#3f3f46', desc: 'Nối các khu, giúp thành phố sầm uất' },
-  house:       { name: 'Nhà dân',            cost: 100, color: '#3b82f6', desc: '+8 dân, cần điện & nước', capacity: 8, powerUse: 1, waterUse: 1, upkeep: 1 },
-  shop:        { name: 'Chợ',                cost: 150, color: '#f59e0b', desc: 'Thu nhập +12, hạnh phúc +4', income: 12, powerUse: 1, waterUse: 1, upkeep: 2, happiness: 4 },
-  park:        { name: 'Công viên',          cost: 80,  color: '#22c55e', desc: 'Hạnh phúc +8', happiness: 8, upkeep: 1 },
-  factory:     { name: 'Nhà máy',            cost: 220, color: '#a16207', desc: 'Thu nhập +30, ô nhiễm -6 hạnh phúc', income: 30, powerUse: 3, waterUse: 2, upkeep: 4, happiness: -6 },
-  power:       { name: 'Nhà máy điện',       cost: 300, color: '#eab308', desc: 'Cung cấp +12 điện', powerGen: 12, upkeep: 3 },
-  water:       { name: 'Tháp nước',          cost: 260, color: '#06b6d4', desc: 'Cung cấp +12 nước', waterGen: 12, upkeep: 3 },
-  police:      { name: 'Đồn cảnh sát',       cost: 220, color: '#1e40af', desc: 'Giảm nghi ngờ, hạnh phúc +3', suspicionRate: -2, happiness: 3, upkeep: 4 },
+  road:        { name: 'Đường',                cost: 10,  color: '#3f3f46', desc: 'Nối các khu, giúp thành phố sầm uất' },
+  house:       { name: 'Nhà dân',              cost: 100, color: '#3b82f6', desc: '+8 dân, cần điện & nước', capacity: 8, powerUse: 1, waterUse: 1, upkeep: 1 },
+  shop:        { name: 'Chợ',                  cost: 150, color: '#f59e0b', desc: 'Thu nhập +12, hạnh phúc +4', income: 12, powerUse: 1, waterUse: 1, upkeep: 2, happiness: 4 },
+  park:        { name: 'Công viên',            cost: 80,  color: '#22c55e', desc: 'Hạnh phúc +8', happiness: 8, upkeep: 1 },
+  school:      { name: 'Trường học',           cost: 180, color: '#8b5cf6', desc: 'Hạnh phúc +5', happiness: 5, powerUse: 1, upkeep: 2 },
+  hospital:    { name: 'Bệnh viện',            cost: 200, color: '#ec4899', desc: 'Hạnh phúc +6, sức chứa +10', happiness: 6, capacity: 10, powerUse: 2, waterUse: 1, upkeep: 3 },
+  factory:     { name: 'Nhà máy',              cost: 220, color: '#a16207', desc: 'Thu nhập +30, ô nhiễm -6 hạnh phúc', income: 30, powerUse: 3, waterUse: 2, upkeep: 4, happiness: -6 },
+  power:       { name: 'Nhà máy điện',         cost: 300, color: '#eab308', desc: 'Cung cấp +12 điện', powerGen: 12, upkeep: 3 },
+  water:       { name: 'Tháp nước',            cost: 260, color: '#06b6d4', desc: 'Cung cấp +12 nước', waterGen: 12, upkeep: 3 },
+  police:      { name: 'Đồn cảnh sát',         cost: 220, color: '#1e40af', desc: 'Giảm nghi ngờ, hạnh phúc +3', suspicionRate: -2, happiness: 3, upkeep: 4 },
+  bank:        { name: 'Ngân hàng',            cost: 280, color: '#10b981', desc: 'Thu nhập +20, hạnh phúc +2', income: 20, happiness: 2, powerUse: 2, waterUse: 1, upkeep: 4 },
   underground: { name: 'Xưởng ngầm (phi pháp)', cost: 120, color: '#b91c1c', desc: 'Thu nhập +55 NHƯNG nghi ngờ +4/turn', income: 55, powerUse: 1, waterUse: 1, upkeep: 5, happiness: -10, suspicionRate: 4 },
+  casino:      { name: 'Sòng bạc (phi pháp)',   cost: 200, color: '#7c3aed', desc: 'Thu nhập +60 NHƯNG nghi ngờ +5/turn', income: 60, powerUse: 2, waterUse: 1, upkeep: 6, happiness: -8, suspicionRate: 5 },
 };
 
 const EVENTS = [
   { title: 'Nhà đầu tư bí ẩn',
     desc: 'Một tập đoàn bí ẩn đề nghị tài trợ lớn cho dự án nhưng muốn "ưu đãi thủ tục".',
-    legal:   { label: 'Từ chối, làm đúng quy trình', money: 0, reputation: 5, note: 'Danh tiếng +5' },
+    legal:   { label: 'Từ chối, làm đúng quy trình', reputation: 5, note: 'Danh tiếng +5' },
     illegal: { label: 'Nhận hối lộ để duyệt nhanh', money: 300, suspicion: 15, note: '+300 tiền · Nghi ngờ +15' } },
   { title: 'Kiểm tra môi trường',
     desc: 'Thanh tra môi trường sắp đến kiểm tra các nhà máy trong thành phố.',
@@ -47,11 +52,54 @@ const EVENTS = [
     desc: 'Một gói thầu hạ tầng lớn đang được đấu thầu công khai.',
     legal:   { label: 'Đấu thầu minh bạch', money: 80, reputation: 4, note: '+80 tiền · Danh tiếng +4' },
     illegal: { label: 'Dàn xếp thầu', money: 250, suspicion: 18, note: '+250 tiền · Nghi ngờ +18' } },
+  { title: 'Bầu cử thị trưởng',
+    desc: 'Kỳ bầu cử đến gần, đối thủ đang vận động ráo riết.',
+    legal:   { label: 'Vận động minh bạch', reputation: 10, note: 'Danh tiếng +10' },
+    illegal: { label: 'Mua phiếu bầu', money: -250, suspicion: 22, note: '-250 tiền · Nghi ngờ +22' } },
+  { title: 'Dịch bệnh bùng phát',
+    desc: 'Dịch bệnh lan trong khu dân cư, người dân lo lắng.',
+    legal:   { label: 'Đầu tư y tế công', money: -180, reputation: 8, happiness: 5, note: '-180 tiền · Danh tiếng +8 · Hạnh phúc +5' },
+    illegal: { label: 'Che giấu thông tin', suspicion: 20, note: 'Nghi ngờ +20' } },
 ];
 
 let selected = 'road';
 
 function $(id) { return document.getElementById(id); }
+
+// ---- Âm thanh (Web Audio API, không cần file ngoài) ----
+const Sound = {
+  ctx: null,
+  enabled: true,
+  init() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) this.ctx = new AC();
+  },
+  ensure() {
+    if (!this.ctx) this.init();
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  beep(freq, dur, type, vol) {
+    if (!this.enabled) return;
+    this.ensure();
+    if (!this.ctx) return;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type || 'square';
+    o.frequency.value = freq;
+    g.gain.value = vol || 0.08;
+    o.connect(g);
+    g.connect(this.ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    o.stop(this.ctx.currentTime + dur);
+  },
+  place() { this.beep(220, 0.08, 'square', 0.06); },
+  event() { this.beep(520, 0.2, 'triangle', 0.08); },
+  danger() { this.beep(180, 0.3, 'sawtooth', 0.09); },
+  win() { [523, 659, 784].forEach((f, i) => setTimeout(() => this.beep(f, 0.2, 'sine', 0.08), i * 140)); },
+  lose() { [300, 220, 160].forEach((f, i) => setTimeout(() => this.beep(f, 0.3, 'sawtooth', 0.09), i * 180)); },
+};
 
 function updateHUD() {
   $('stat-money').textContent = Math.round(state.money);
@@ -85,7 +133,7 @@ function log(msg) {
 
 function populateToolbar() {
   const bar = $('toolbar');
-  const order = ['road', 'house', 'shop', 'park', 'factory', 'power', 'water', 'police', 'underground'];
+  const order = ['road', 'house', 'shop', 'park', 'school', 'hospital', 'factory', 'power', 'water', 'police', 'bank', 'underground', 'casino'];
   order.forEach(function (id) {
     const d = BUILDINGS[id];
     const btn = document.createElement('button');
@@ -138,9 +186,43 @@ function applyChoice(o) {
   if (o.money) state.money += o.money;
   if (o.reputation) state.reputation = clamp(state.reputation + o.reputation, 0, 100);
   if (o.suspicion) state.suspicion = clamp(state.suspicion + o.suspicion, 0, 100);
+  if (o.happiness) state.happiness = clamp(state.happiness + o.happiness, 0, 100);
+  if (o.suspicion > 0) Sound.danger();
   log(o.note || 'Đã quyết định');
   toast(o.note || '');
   updateHUD();
+}
+
+// ---- Lưu / nạp game bằng localStorage ----
+function saveGame(scene) {
+  try {
+    const data = {
+      state: Object.assign({}, state, { gameOver: false, won: false, eventActive: false }),
+      grid: scene.grid,
+      roadTiles: scene.roadTiles,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  } catch (e) { /* bỏ qua khi localStorage bị chặn */ }
+}
+
+function loadGame(scene) {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    Object.assign(state, data.state);
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) scene.grid[y][x] = data.grid[y][x] || null;
+    }
+    scene.roadTiles = data.roadTiles || [];
+    scene.recalc();
+    scene.drawMap();
+    return true;
+  } catch (e) { return false; }
+}
+
+function clearSave() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ }
 }
 
 class CityScene extends Phaser.Scene {
@@ -161,25 +243,81 @@ class CityScene extends Phaser.Scene {
       this.citizens.push({ x: Math.random() * W, y: Math.random() * H, tx: Math.random() * W, ty: Math.random() * H });
     }
 
-    this.drawMap();
-    this.input.on('pointermove', (p) => {
-      const t = this.tileAt(p.x, p.y);
-      this.hover = t;
-    });
-    this.input.on('pointerdown', (p) => this.place(p));
-
+    this.setupInput();
     this.time.addEvent({ delay: 2500, loop: true, callback: () => this.tick() });
-    log('Chọn công trình và click vào bản đồ để xây dựng.');
+
+    if (!loadGame(this)) {
+      this.drawMap();
+      log('Chọn công trình và click vào bản đồ để xây dựng.');
+    } else {
+      log('Đã tải lại thành phố từ bản lưu.');
+    }
     updateHUD();
+  }
+
+  worldPoint(p) {
+    return this.cameras.main.getWorldPoint(p.x, p.y);
+  }
+
+  clampCamera() {
+    const cam = this.cameras.main;
+    const viewW = W / cam.zoom, viewH = H / cam.zoom;
+    cam.scrollX = clamp(cam.scrollX, 0, Math.max(0, W - viewW));
+    cam.scrollY = clamp(cam.scrollY, 0, Math.max(0, H - viewH));
+  }
+
+  setupInput() {
+    this.input.on('pointerdown', (p) => {
+      this.dragging = false;
+      this.dragStart = { x: p.x, y: p.y };
+      this.dragLast = { x: p.x, y: p.y };
+    });
+
+    this.input.on('pointermove', (p) => {
+      const wp = this.worldPoint(p);
+      this.hover = this.tileAt(wp.x, wp.y);
+      if (this.input.activePointer.isDown) {
+        const dx = p.x - this.dragStart.x, dy = p.y - this.dragStart.y;
+        if (!this.dragging && Math.hypot(dx, dy) > 6) this.dragging = true;
+        if (this.dragging) {
+          const cam = this.cameras.main;
+          cam.scrollX -= (p.x - this.dragLast.x) / cam.zoom;
+          cam.scrollY -= (p.y - this.dragLast.y) / cam.zoom;
+          this.dragLast = { x: p.x, y: p.y };
+          this.clampCamera();
+        }
+      }
+    });
+
+    this.input.on('pointerup', (p) => {
+      if (!this.dragging) {
+        const wp = this.worldPoint(p);
+        this.place(wp.x, wp.y);
+      }
+      this.dragging = false;
+    });
+
+    this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
+      const cam = this.cameras.main;
+      const factor = deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = clamp(cam.zoom * factor, 0.6, 2.0);
+      if (newZoom === cam.zoom) return;
+      const before = cam.getWorldPoint(pointer.x, pointer.y);
+      cam.setZoom(newZoom);
+      const after = cam.getWorldPoint(pointer.x, pointer.y);
+      cam.scrollX += before.x - after.x;
+      cam.scrollY += before.y - after.y;
+      this.clampCamera();
+    });
   }
 
   tileAt(px, py) {
     return { x: Math.floor(px / TILE), y: Math.floor(py / TILE) };
   }
 
-  place(p) {
+  place(wx, wy) {
     if (state.gameOver || state.won) return;
-    const t = this.tileAt(p.x, p.y);
+    const t = this.tileAt(wx, wy);
     if (t.x < 0 || t.x >= COLS || t.y < 0 || t.y >= ROWS) return;
     const def = BUILDINGS[selected];
     if (this.grid[t.y][t.x]) { toast('Ô này đã có công trình'); return; }
@@ -189,7 +327,9 @@ class CityScene extends Phaser.Scene {
     if (selected === 'road') this.roadTiles.push({ x: t.x, y: t.y });
     this.recalc();
     this.drawMap();
+    Sound.place();
     updateHUD();
+    saveGame(this);
   }
 
   recalc() {
@@ -248,22 +388,26 @@ class CityScene extends Phaser.Scene {
     if (state.day % 4 === 0 && !state.eventActive) this.triggerEvent();
 
     updateHUD();
+    saveGame(this);
   }
 
   triggerEvent() {
     const evt = EVENTS[Math.floor(Math.random() * EVENTS.length)];
     state.eventActive = true;
+    Sound.event();
     showModal(evt.title, evt.desc, evt.legal, evt.illegal);
   }
 
   gameOver(msg) {
     state.gameOver = true;
+    Sound.lose();
     showModal('💀 GAME OVER', msg, { label: 'Chơi lại', fn: () => location.reload() }, null);
     updateHUD();
   }
 
   winGame() {
     state.won = true;
+    Sound.win();
     showModal('🏆 CHIẾN THẮNG', 'Thành phố đạt ' + WIN_POP + ' dân với Nghi ngờ ' + Math.round(state.suspicion) + '.',
       { label: 'Chơi lại', fn: () => location.reload() }, null);
     updateHUD();
@@ -308,6 +452,13 @@ class CityScene extends Phaser.Scene {
         g.fillStyle(0xfde047, 0.9); g.fillRect(cx - 4, cy - 6, 4, 3); break;
       case 'park':
         g.fillStyle(0x166534, 0.9); g.fillCircle(cx, cy, 6); break;
+      case 'school':
+        g.fillStyle(0xffffff, 0.9); g.fillRect(cx - 6, cy - 5, 12, 10);
+        g.fillStyle(0x1e1b4b, 0.9); g.fillRect(cx - 1, cy - 4, 2, 8); break;
+      case 'hospital':
+        g.fillStyle(0xffffff, 0.9); g.fillRect(cx - 6, cy - 5, 12, 10);
+        g.fillStyle(0xdc2626, 0.9); g.fillRect(cx - 1.5, cy - 4, 3, 8);
+        g.fillRect(cx - 5, cy - 2, 10, 3); break;
       case 'factory':
         g.fillStyle(0x292524, 0.9); g.fillRect(cx - 3, cy - 8, 6, 6);
         g.fillStyle(0x57534e, 0.9); g.fillRect(cx - 7, cy - 1, 14, 8); break;
@@ -319,9 +470,16 @@ class CityScene extends Phaser.Scene {
       case 'police':
         g.fillStyle(0xffffff, 0.9); g.fillRect(cx - 6, cy - 5, 12, 10);
         g.fillStyle(0x1e3a8a, 0.9); g.fillRect(cx - 1.5, cy - 3, 3, 6); break;
+      case 'bank':
+        g.fillStyle(0xffffff, 0.9); g.fillRect(cx - 6, cy - 5, 12, 10);
+        g.fillStyle(0x065f46, 0.9); g.fillRect(cx - 1, cy - 4, 2, 8); break;
       case 'underground':
         g.fillStyle(0x7f1d1d, 0.9); g.fillRect(cx - 6, cy - 6, 12, 12);
         g.fillStyle(0xffffff, 0.8); g.fillRect(cx - 5, cy - 5, 10, 3); break;
+      case 'casino':
+        g.fillStyle(0xffffff, 0.9); g.fillRect(cx - 6, cy - 6, 12, 12);
+        g.fillStyle(0x4c1d95, 0.9); g.fillCircle(cx - 2, cy - 2, 2); g.fillCircle(cx + 2, cy - 2, 2);
+        g.fillCircle(cx - 2, cy + 2, 2); g.fillCircle(cx + 2, cy + 2, 2); break;
     }
   }
 
@@ -358,7 +516,21 @@ setSelected('road');
 updateHUD();
 
 $('start-btn').addEventListener('click', function () {
+  Sound.init();
   $('disclaimer').classList.add('hide');
+});
+
+$('sound-btn').addEventListener('click', function () {
+  Sound.enabled = !Sound.enabled;
+  this.textContent = Sound.enabled ? '🔊' : '🔇';
+  if (Sound.enabled) Sound.beep(440, 0.1, 'sine', 0.06);
+});
+
+$('reset-btn').addEventListener('click', function () {
+  if (confirm('Xóa toàn bộ tiến trình đã lưu và chơi lại từ đầu?')) {
+    clearSave();
+    location.reload();
+  }
 });
 
 new Phaser.Game({

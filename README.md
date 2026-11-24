@@ -29,9 +29,10 @@ Mỗi quyết định lớn có 2 con đường:
 
 1. Chọn công trình ở thanh công cụ, click vào bản đồ để đặt.
 2. Xây **nhà dân** để tăng dân, **điện/nước** để cung cấp tiện ích.
-3. **Xưởng ngầm (phi pháp)** cho thu nhập cao nhưng tăng Nghi ngờ — rủi ro bị bắt.
+3. **Xưởng ngầm / Sòng bạc (phi pháp)** cho thu nhập cao nhưng tăng Nghi ngờ — rủi ro bị bắt.
 4. Sự kiện ngẫu nhiên xuất hiện định kỳ, mỗi sự kiện có lựa chọn hợp pháp/phi pháp.
 5. Thắng khi đạt **250 dân**; thua khi **Nghi ngờ = 100** hoặc **phá sản**.
+6. **Thao tác:** click để đặt · kéo để di chuyển bản đồ · lăn chuột để zoom.
 
 ## Chạy local
 
@@ -43,5 +44,7 @@ python3 -m http.server 8080
 ## Công nghệ
 
 - Phaser 3 (CDN) + HTML/CSS/JS thuần
-- Lưu state trong bộ nhớ (chưa dùng localStorage)
-- Công trình & sự kiện định nghĩa data-driven trong `game.js`
+- Tự động lưu/khôi phục bằng `localStorage`
+- Âm thanh tạo bằng Web Audio API (không cần file ngoài), có nút bật/tắt
+- Camera pan (kéo) + zoom (lăn chuột)
+- 13 loại công trình + 6 sự kiện, định nghĩa data-driven trong `game.js`

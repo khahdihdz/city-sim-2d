@@ -4,6 +4,9 @@ body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 .hud { background: #1e293b; padding: 8px 12px; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 10; }
 .hud-row { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; }
 .stat b { color: #fbbf24; }
+.hud-actions { margin-left: auto; display: flex; gap: 6px; }
+.hud-btn { background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; padding: 4px 9px; font-size: 15px; cursor: pointer; line-height: 1; }
+.hud-btn:hover { background: #475569; }
 
 .sus-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .sus-label { font-size: 12px; color: #fca5a5; white-space: nowrap; }
